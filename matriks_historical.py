@@ -6,7 +6,7 @@ import pandas as pd
 from datetime import datetime, timedelta
 # import datetime as dt
 from collections import OrderedDict
-from time import sleep
+
 
 
 class MatriksData(object):

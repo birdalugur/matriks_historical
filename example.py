@@ -1,14 +1,14 @@
 # %%
 import matriks_historical as mh
 
-username = '12951' #your username or userid
-password = 'VELI2951' #your password
+username = '12951'  # your username or userid
+password = 'VELI2951'  # your password
 mtx = mh.MatriksData(username, password)
 
 start_date = '2019-04-01'
 end_date = '2019-04-04'
 # bar_data = mtx.bar('GARAN', start_date, end_date, period='1day')
-ege_data = mtx.bestbidoffer('GARAN',start_date, end_date)
+ege_data = mtx.bestbidoffer('GARAN', start_date, end_date)
 print(ege_data)
 
 # news = mh.news(username, password, symbol='THYAO')
