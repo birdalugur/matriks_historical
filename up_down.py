@@ -5,8 +5,12 @@ import numpy as np
 def tick_pivot(pivot: pd.Series) -> pd.Series:
     """Mark the pivot's movements.
     """
-    pivot_bools = ~(np.sign(pivot).eq(0) | pivot.isna())
-    return pivot_bools.cumsum()
+    x = np.sign(pivot)
+    y = x.fillna(0)
+
+    q = ~(x.shift() * x).eq(1)
+    z = (((y < 0) | (y > 0)) & q).cumsum()
+    return z
 
 
 def get_change(pivot, other):
@@ -45,7 +49,12 @@ def find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
             except:
                 print(name + 1, ' is not found!')
         else:
-            res = df['sign_other'].bfill().values[1]
+            sign_o = df['sign_other'].mask(df['sign_other'].eq(0)).dropna()
+            if len(sign_o) == 0:
+                res = 0
+            else:
+                res = sign_o.values[0]
+        print(res)
         other_signs.append(res)
         pivot_signs.append(sign_pivot)
         pivot_time.append(df.index[0])
