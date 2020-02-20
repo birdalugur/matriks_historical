@@ -24,7 +24,7 @@ def get_change(pivot, other):
     return change_df
 
 
-def find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
+def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
     # pivot'un değişim noktaları işaretleniyor
     waves_pivot: pd.Series = tick_pivot(pivot)
 
@@ -54,7 +54,7 @@ def find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
                 res = 0
             else:
                 res = sign_o.values[0]
-        print(res)
+
         other_signs.append(res)
         pivot_signs.append(sign_pivot)
         pivot_time.append(df.index[0])
@@ -62,3 +62,10 @@ def find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
     result = pd.concat([pd.Series(pivot_time), pd.Series(pivot_signs), pd.Series(other_signs)], axis=1)
     result.columns = ['date', pivot.name, non_pivot.name]
     return result
+
+
+def find_updown(change: pd.DataFrame):
+    up_down = _find_updown(change.index, change.iloc[:, 0], change.iloc[:, 1])
+    up_down = up_down.loc[np.trim_zeros(up_down.iloc[:, 1]).index]
+    up_down = up_down.fillna(0)
+    return up_down.iloc[:, 1], up_down.iloc[:, 2]

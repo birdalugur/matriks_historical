@@ -1,4 +1,5 @@
 # kullanılacak kütüphaneler import ediliyor
+import itertools
 import pandas as pd
 import numpy as np
 
@@ -19,60 +20,91 @@ data = list(all_data)[6][1]
 
 data = data.reset_index().pivot_table(index='date', columns='symbol', values='mid_price')
 
-akbnk = data['AKBNK']
-garan = data['GARAN']
-
-# Up - Down
 from up_down import get_change, find_updown
-
-change = get_change(akbnk, garan)
-
-up_down = find_updown(change.index, change.iloc[:, 0], change.iloc[:, 1])
-
-up_down = up_down.loc[np.trim_zeros(up_down.AKBNK).index]
-
-up_down = up_down.fillna(0)
-
-# Confusion Matrix
 from sklearn.metrics import confusion_matrix
+from plot import plot_confusion_matrix, plt
+import scipy.stats as stats
+from sklearn.metrics import matthews_corrcoef, mutual_info_score
+from sklearn.metrics import adjusted_rand_score, accuracy_score
 
-c_matrix = confusion_matrix(up_down.iloc[:, 1], up_down.iloc[:, 2], labels=[1, 0, -1]).T
 
-c_matrix = np.delete(c_matrix, 1, 1)
+def get_confusion_matrix(pivot, other):
+    # Confusion Matrix
+    c_matrix = confusion_matrix(pivot, other, labels=[1, 0, -1]).T
 
-# Plot
-from plot import plot_confusion_matrix
+    c_matrix = np.delete(c_matrix, 1, 1)
+
+    return c_matrix
+
+
+def get_stats(y_true, y_pred):
+    mcc = matthews_corrcoef(y_true, y_pred)
+    # print("Mathews correlation coef. =", mcc)
+    acc = accuracy_score(y_true, y_pred)
+    # print('Accuracy score: ', acc)
+    mi = mutual_info_score(y_true, y_pred)
+    # print('Mutual information score: ', mi)
+    ari = adjusted_rand_score(y_true, y_pred)
+    # print('Adjusted random score: ', ari)
+    return mcc, acc, mi, ari
+
+
+all_pairs = [list(pair) for pair in itertools.permutations(data.columns, 2)]
 
 np.set_printoptions(precision=2)
 
 class_names = ['up', 'const', 'down']
 
-x = plot_confusion_matrix(c_matrix, classes=class_names, title='Confusion matrix, without normalization')
-y = plot_confusion_matrix(c_matrix, classes=class_names, normalize=True, title='Normalized confusion matrix')
+all_mcc = []
+all_acs = []
+all_mi = []
+all_ari = []
+all_oddsratio = []
+all_pval = []
+all_chi2 = []
+all_p = []
+all_dof = []
+all_ex = []
 
-# Info
-y_true = up_down.iloc[:, 1]
-y_pred = up_down.iloc[:, 2]
+for pair in all_pairs:
+    print(pair)
+    first_symbol = data[pair[0]]
+    second_symbol = data[pair[1]]
 
-import scipy.stats as stats
-from sklearn.metrics import matthews_corrcoef, mutual_info_score
-from sklearn.metrics import adjusted_rand_score, r2_score, accuracy_score
+    change = get_change(first_symbol, second_symbol)
 
-# cnf_matrix[[True,False,True],:]
-# cnf_matrix2d = np.delete(cnf_matrix,[1,3,4,5,7]).reshape(2,2)
-# cnf_matrix2d
+    # Up - Down
+    pivot, other = find_updown(change)
 
-# oddsratio, pvalue = stats.fisher_exact(c_matrix)
-# print('Fischer exact test p-val: ',p_value)
-res = stats.chi2_contingency(c_matrix)
-print('Chi-square test p-val: ', res[1])
-mcc = matthews_corrcoef(y_true, y_pred)
-print("Mathews correlation coef. =", mcc)
-acc = accuracy_score(y_true, y_pred)
-print('Accuracy score: ', acc)
-mi = mutual_info_score(y_true, y_pred)
-print('Mutual information score: ', mi)
-ari = adjusted_rand_score(y_true, y_pred)
-print('Adjusted random score: ', ari)
+    matrix = get_confusion_matrix(pivot, other)
 
-# oddsratio, pvalue = stats.fisher_exact(y_true, y_pred)
+    matrix2d = np.delete(matrix, 1, 0).reshape(2, 2)
+
+    # stats
+    mcc = matthews_corrcoef(other, pivot)
+    accuracy_score = accuracy_score(other, pivot)
+    mi = mutual_info_score(other, pivot)
+    ari = adjusted_rand_score(other, pivot)
+    oddsratio, p_value = stats.fisher_exact(matrix2d)
+    chi2, p, dof, ex = stats.chi2_contingency(matrix2d)
+
+    # add stats to list
+    all_mcc.append(mcc)
+    all_acs.append(accuracy_score)
+    all_mi.append(mi)
+    all_ari.append(ari)
+    all_oddsratio.append(oddsratio)
+    all_pval.append(p_value)
+    all_chi2.append(chi2)
+    all_p.append(p)
+    all_dof.append(dof)
+    all_ex.append(ex)
+
+    plt.figure()
+    plot_confusion_matrix(matrix, classes=class_names, title='Confusion matrix, normalization',
+                          x_label=pair[0], y_label=pair[1], normalize=True)
+    file_name = 'graphs_normalized/' + pair[0] + '_' + pair[1] + '.png'
+    plt.savefig(file_name)
+    plt.close()
+
+
