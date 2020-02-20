@@ -16,8 +16,6 @@ data: pd.DataFrame = pd.read_csv(data_path, dtype=dt, parse_dates=parse_dates, i
 # TEST DATA
 all_data = data.resample('D')
 
-data = list(all_data)[6][1]
-
 data = data.reset_index().pivot_table(index='date', columns='symbol', values='mid_price')
 
 from up_down import get_change, find_updown
@@ -86,7 +84,12 @@ for pair in all_pairs:
     mi = mutual_info_score(other, pivot)
     ari = adjusted_rand_score(other, pivot)
     oddsratio, p_value = stats.fisher_exact(matrix2d)
-    chi2, p, dof, ex = stats.chi2_contingency(matrix2d)
+    try:
+        chi2, p, dof, ex = stats.chi2_contingency(matrix2d)
+    except ValueError:
+        print(pair, ': için chi2 hesaplanamadı ve değerler nan geçildi !')
+        chi2, p, dof, ex = np.nan, np.nan, np.nan, np.nan
+
 
     # add stats to list
     all_mcc.append(mcc)
@@ -101,9 +104,16 @@ for pair in all_pairs:
     all_ex.append(ex)
 
     plt.figure()
-    plot_confusion_matrix(matrix, classes=class_names, title='Confusion matrix, normalization',
+    plot_confusion_matrix(matrix, classes=class_names, title='Normalized confusion matrix',
                           x_label=pair[0], y_label=pair[1], normalize=True)
     file_name = 'graphs_normalized/' + pair[0] + '_' + pair[1] + '.png'
+    plt.savefig(file_name)
+    plt.close()
+
+    plt.figure()
+    plot_confusion_matrix(matrix, classes=class_names, title='Confusion matrix, without normalized',
+                          x_label=pair[0], y_label=pair[1], normalize=False)
+    file_name = 'graphs/' + pair[0] + '_' + pair[1] + '.png'
     plt.savefig(file_name)
     plt.close()
 
@@ -116,10 +126,9 @@ all_stats = pd.DataFrame([
     all_pval,
     all_chi2,
     all_p,
-    all_dof,
-    all_ex,
-], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
-          'adjusted_rand_score', 'oddsratio', 'p_value', 'chi2', 'p', 'dof', 'ex'], columns=all_pairs)
+    all_dof], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
+          'adjusted_rand_score', 'oddsratio', 'p_value', 'chi2', 'p', 'dof'])
 
+all_stats.columns=list(itertools.permutations(data.columns, 2))
 
 all_stats.to_csv('statistics.csv')
