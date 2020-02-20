@@ -41,7 +41,7 @@ c_matrix = confusion_matrix(up_down.iloc[:, 1], up_down.iloc[:, 2], labels=[1, 0
 c_matrix = np.delete(c_matrix, 1, 1)
 
 # Plot
-from cm_plot import plot_confusion_matrix
+from plot import plot_confusion_matrix
 
 np.set_printoptions(precision=2)
 
