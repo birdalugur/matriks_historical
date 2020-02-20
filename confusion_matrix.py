@@ -82,7 +82,7 @@ for pair in all_pairs:
 
     # stats
     mcc = matthews_corrcoef(other, pivot)
-    accuracy_score = accuracy_score(other, pivot)
+    acc_score = accuracy_score(other, pivot)
     mi = mutual_info_score(other, pivot)
     ari = adjusted_rand_score(other, pivot)
     oddsratio, p_value = stats.fisher_exact(matrix2d)
@@ -90,7 +90,7 @@ for pair in all_pairs:
 
     # add stats to list
     all_mcc.append(mcc)
-    all_acs.append(accuracy_score)
+    all_acs.append(acc_score)
     all_mi.append(mi)
     all_ari.append(ari)
     all_oddsratio.append(oddsratio)
@@ -107,4 +107,19 @@ for pair in all_pairs:
     plt.savefig(file_name)
     plt.close()
 
+all_stats = pd.DataFrame([
+    all_mcc,
+    all_acs,
+    all_mi,
+    all_ari,
+    all_oddsratio,
+    all_pval,
+    all_chi2,
+    all_p,
+    all_dof,
+    all_ex,
+], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
+          'adjusted_rand_score', 'oddsratio', 'p_value', 'chi2', 'p', 'dof', 'ex'], columns=all_pairs)
 
+
+all_stats.to_csv('statistics.csv')
