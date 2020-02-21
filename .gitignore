@@ -3,3 +3,8 @@ __pycache__/
 notebooks/
 matriks_historical.py
 example.py
+graphs/
+graphs_normalized/
+data/
+ex.py
+randomts.py
