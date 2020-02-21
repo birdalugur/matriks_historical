@@ -51,7 +51,7 @@ def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
         if len(df) == 1:
             try:
                 res = group.get_group(name + 1)['sign_other'].head(1).values[0]
-                print('attention! wave size found zero : ', name)
+                # print('attention! wave size found zero : ', name)
             except:
                 print(name + 1, ' is not found!')
                 res=np.nan
