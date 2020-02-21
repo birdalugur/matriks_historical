@@ -13,7 +13,7 @@ def tick_pivot(pivot: pd.Series) -> pd.Series:
     return z
 
 
-def get_change(pivot, other):
+def _get_change(pivot, other):
     # NaN'ları kaldır ve change'i hesapla
     change_1 = pivot.dropna().diff().dropna()
     change_2 = other.dropna().diff().dropna()
@@ -22,6 +22,11 @@ def get_change(pivot, other):
     # # baştaki ve sondaki nan'ları kaldır
     # change_df = change_df[change_df.first_valid_index():change_df.last_valid_index()]
     return change_df
+
+def get_change(x):
+    pivot = x.iloc[:, 0]
+    other = x.iloc[:,1]
+    return _get_change(pivot,other)
 
 
 def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
@@ -46,8 +51,10 @@ def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
         if len(df) == 1:
             try:
                 res = group.get_group(name + 1)['sign_other'].head(1).values[0]
+                print('attention! wave size found zero : ', name)
             except:
                 print(name + 1, ' is not found!')
+                res=np.nan
         else:
             sign_o = df['sign_other'].mask(df['sign_other'].eq(0)).dropna()
             if len(sign_o) == 0:
@@ -61,6 +68,7 @@ def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
 
     result = pd.concat([pd.Series(pivot_time), pd.Series(pivot_signs), pd.Series(other_signs)], axis=1)
     result.columns = ['date', pivot.name, non_pivot.name]
+    print('<<<<<<<<<<<<<<')
     return result
 
 
@@ -68,4 +76,5 @@ def find_updown(change: pd.DataFrame):
     up_down = _find_updown(change.index, change.iloc[:, 0], change.iloc[:, 1])
     up_down = up_down.loc[np.trim_zeros(up_down.iloc[:, 1]).index]
     up_down = up_down.fillna(0)
-    return up_down.iloc[:, 1], up_down.iloc[:, 2]
+    return up_down
+    #return up_down.iloc[:, 1], up_down.iloc[:, 2]

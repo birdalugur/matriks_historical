@@ -14,7 +14,7 @@ parse_dates: list = ['date']
 data: pd.DataFrame = pd.read_csv(data_path, dtype=dt, parse_dates=parse_dates, index_col='date')
 
 # TEST DATA
-all_data = data.resample('D')
+# all_data = data.resample('D')
 
 data = data.reset_index().pivot_table(index='date', columns='symbol', values='mid_price')
 
@@ -35,18 +35,6 @@ def get_confusion_matrix(pivot, other):
     return c_matrix
 
 
-def get_stats(y_true, y_pred):
-    mcc = matthews_corrcoef(y_true, y_pred)
-    # print("Mathews correlation coef. =", mcc)
-    acc = accuracy_score(y_true, y_pred)
-    # print('Accuracy score: ', acc)
-    mi = mutual_info_score(y_true, y_pred)
-    # print('Mutual information score: ', mi)
-    ari = adjusted_rand_score(y_true, y_pred)
-    # print('Adjusted random score: ', ari)
-    return mcc, acc, mi, ari
-
-
 all_pairs = [list(pair) for pair in itertools.permutations(data.columns, 2)]
 
 np.set_printoptions(precision=2)
@@ -64,15 +52,24 @@ all_p = []
 all_dof = []
 all_ex = []
 
-for pair in all_pairs:
-    print(pair)
-    first_symbol = data[pair[0]]
-    second_symbol = data[pair[1]]
+error_list = list()
 
-    change = get_change(first_symbol, second_symbol)
+for pair in all_pairs:
+    print('>>>>>>>>')
+    print(pair)
+    # first_symbol = data[pair[0]]
+    # second_symbol = data[pair[1]]
+    pair_df = data[pair]
+
+    change = pair_df.resample('D').apply(get_change)
+    change = change.droplevel(0)
 
     # Up - Down
-    pivot, other = find_updown(change)
+    up_down = change.resample('D').apply(find_updown)
+    up_down = up_down.reset_index(drop=True)
+    pivot = up_down.iloc[:, 1]
+    other = up_down.iloc[:, 2]
+    # pivot, other = find_updown(change)
 
     matrix = get_confusion_matrix(pivot, other)
 
@@ -84,12 +81,13 @@ for pair in all_pairs:
     mi = mutual_info_score(other, pivot)
     ari = adjusted_rand_score(other, pivot)
     oddsratio, p_value = stats.fisher_exact(matrix2d)
+
     try:
-        chi2, p, dof, ex = stats.chi2_contingency(matrix2d)
+        chi2, p, dof, ex = stats.chi2_contingency(matrix)
     except ValueError:
+        error_list.append(pair)
         print(pair, ': için chi2 hesaplanamadı ve değerler nan geçildi !')
         chi2, p, dof, ex = np.nan, np.nan, np.nan, np.nan
-
 
     # add stats to list
     all_mcc.append(mcc)
@@ -127,8 +125,8 @@ all_stats = pd.DataFrame([
     all_chi2,
     all_p,
     all_dof], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
-          'adjusted_rand_score', 'oddsratio', 'p_value', 'chi2', 'p', 'dof'])
+                     'adjusted_rand_score', 'oddsratio', 'p_value', 'chi2', 'p', 'dof'])
 
-all_stats.columns=list(itertools.permutations(data.columns, 2))
+all_stats.columns = list(itertools.permutations(data.columns, 2))
 
 all_stats.to_csv('statistics.csv')
