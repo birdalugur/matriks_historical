@@ -4,6 +4,7 @@ import pandas as pd
 import numpy as np
 
 # data'ya ait yol
+#https://www.dropbox.com/sh/fdnc4b1x8e9fge7/AAA2UVr5l0k19qapPVfn3COOa?dl=0
 data_path: str = 'data/bist30data.csv'
 
 # csv'den okunacak verilerin tiplerini belirttik
