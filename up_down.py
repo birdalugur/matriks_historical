@@ -1,42 +1,26 @@
 import pandas as pd
 import numpy as np
+from sklearn.metrics import confusion_matrix
 
-
-def tick_pivot(pivot: pd.Series) -> pd.Series:
+log = []
+def get_waves(sign_pivot: pd.Series) -> pd.Series:
     """Mark the pivot's movements.
     """
-    x = np.sign(pivot)
-    y = x.fillna(0)
-
-    q = ~(x.shift() * x).eq(1)
+    y = sign_pivot.fillna(0)
+    q = ~(sign_pivot.shift() * sign_pivot).eq(1)
     z = (((y < 0) | (y > 0)) & q).cumsum()
     return z
 
 
-def _get_change(pivot, other):
-    # NaN'ları kaldır ve change'i hesapla
-    change_1 = pivot.dropna().diff().dropna()
-    change_2 = other.dropna().diff().dropna()
-    change_df = pd.concat([change_1, change_2], axis=1)
-    change_df = change_df[(change_df.index >= change_1.index.min())]
-    # # baştaki ve sondaki nan'ları kaldır
-    # change_df = change_df[change_df.first_valid_index():change_df.last_valid_index()]
-    return change_df
-
-def get_change(x):
-    pivot = x.iloc[:, 0]
-    other = x.iloc[:,1]
-    return _get_change(pivot,other)
-
-
 def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
     # pivot'un değişim noktaları işaretleniyor
-    waves_pivot: pd.Series = tick_pivot(pivot)
+    sign_pivot = np.sign(pivot)
+    waves_pivot: pd.Series = get_waves(sign_pivot)
 
     signs_non_pivot: pd.Series = np.sign(non_pivot)
 
-    d1 = pd.concat([waves_pivot, pivot, non_pivot, signs_non_pivot], axis=1)
-    d1.columns = ['waves', 'pivot', 'other', 'sign_other']
+    d1 = pd.concat([waves_pivot, sign_pivot, signs_non_pivot], axis=1)
+    d1.columns = ['waves', 'sign_pivot', 'sign_other']
 
     group = d1.groupby('waves')
     group_names = list(group.groups.keys())
@@ -46,14 +30,15 @@ def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
     pivot_time = []
 
     for name in group_names:
+        # @sign_pivot : sign of pivot in current wave
+        # @res : sign of pivot in current wave
         df = group.get_group(name)
-        sign_pivot = np.sign(df['pivot'].sum())
+        sign_pivot2 = np.sign(df['sign_pivot'].sum())
         if len(df) == 1:
             try:
                 res = group.get_group(name + 1)['sign_other'].head(1).values[0]
-                # print('attention! wave size found zero : ', name)
             except:
-                print(name + 1, ' is not found!')
+                log.append((name + 1, ' is not found!'))
                 res=np.nan
         else:
             sign_o = df['sign_other'].mask(df['sign_other'].eq(0)).dropna()
@@ -63,16 +48,27 @@ def _find_updown(ts: pd.DatetimeIndex, pivot: pd.Series, non_pivot: pd.Series):
                 res = sign_o.values[0]
 
         other_signs.append(res)
-        pivot_signs.append(sign_pivot)
+        pivot_signs.append(sign_pivot2)
         pivot_time.append(df.index[0])
 
+    log.append('\n')
+    log.append('--------')
     result = pd.concat([pd.Series(pivot_time), pd.Series(pivot_signs), pd.Series(other_signs)], axis=1)
     result.columns = ['date', pivot.name, non_pivot.name]
-    print('<<<<<<<<<<<<<<')
     return result
 
 
+def get_confusion_matrix(pivot, other):
+    # Confusion Matrix
+    c_matrix = confusion_matrix(pivot, other, labels=[1, 0, -1]).T
+
+    c_matrix = np.delete(c_matrix, 1, 1)
+
+    return c_matrix
+
+
 def find_updown(change: pd.DataFrame):
+
     up_down = _find_updown(change.index, change.iloc[:, 0], change.iloc[:, 1])
     up_down = up_down.loc[np.trim_zeros(up_down.iloc[:, 1]).index]
     up_down = up_down.fillna(0)

@@ -1,7 +1,6 @@
 .ipynb_checkpoints/
 __pycache__/
 notebooks/
-matriks_historical.py
 example.py
 graphs/
 graphs_normalized/

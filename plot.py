@@ -2,9 +2,10 @@
 import numpy as np
 import itertools
 import matplotlib.pyplot as plt
+np.set_printoptions(precision=2)
 
 
-def plot_confusion_matrix(cm, classes,
+def plot_confusion_matrix(cm, classes=None,
                           normalize=False,
                           title='Confusion matrix',
                           cmap=plt.cm.Blues,
@@ -14,6 +15,8 @@ def plot_confusion_matrix(cm, classes,
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
     """
+    if classes is None:
+        classes = ['up', 'const', 'down']
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=0)
     #    print("Normalized confusion matrix")
@@ -21,7 +24,7 @@ def plot_confusion_matrix(cm, classes,
         pass
     #    print('Confusion matrix, without normalization')
 
-    #print(cm)
+    # print(cm)
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     plt.title(title)
