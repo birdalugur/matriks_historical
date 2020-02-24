@@ -1,9 +1,6 @@
 .ipynb_checkpoints/
 __pycache__/
-notebooks/
 example.py
-graphs/
-graphs_normalized/
-data/
+data/bist30data.csv
 ex.py
 randomts.py
