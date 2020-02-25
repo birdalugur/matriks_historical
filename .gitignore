@@ -1,6 +1,7 @@
 .ipynb_checkpoints/
+.idea
+.vscode
 __pycache__/
-example.py
 data/bist30data.csv
-ex.py
 randomts.py
+notebooks/
