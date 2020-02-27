@@ -2,19 +2,20 @@
 import itertools
 import pandas as pd
 import numpy as np
-from up_down import *
-from plot import plot_confusion_matrix, plt
+from matrix.up_down import *
+from matrix.plot import plot_confusion_matrix, plt
 import scipy.stats as stats
 from sklearn.metrics import matthews_corrcoef, mutual_info_score
 from sklearn.metrics import adjusted_rand_score, accuracy_score
+from matrix.merge_zeros import merge_zeros
 
 # <<<<<<<<<<<<<<<<<<<<<<
 
 
 # read data from csv >>>>>>>>>>>>>>>>>>>>
 dropbox_link = 'https://www.dropbox.com/sh/fdnc4b1x8e9fge7/AAA2UVr5l0k19qapPVfn3COOa?dl=0'
-data_path: str = '../data/bist30data.csv'
-export_folder = '../results/'
+data_path: str = 'data/bist30data.csv'
+export_folder = 'results/'
 dt: dict = {'symbol': 'str', 'bid_price': 'float64', 'mid_price': 'float64'}
 parse_dates: list = ['date']
 data: pd.DataFrame = pd.read_csv(data_path, dtype=dt, parse_dates=parse_dates, index_col='date')
@@ -62,8 +63,13 @@ for pair in all_pairs:
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     # up-down >>>>>>>>>>>>
-    up_down = change_df.groupby(change_df.index.date).apply(find_updown)
+    up_down: pd.DataFrame = change_df.groupby(change_df.index.date).apply(find_updown)
+    up_down: pd.DataFrame = up_down.reset_index(drop=True)
     # <<<<<
+
+    # Remove zeros from pivot under a certain duration >>>>
+    up_down = merge_zeros(up_down, limit='0.5s')
+    # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
     y_pred = up_down.iloc[:, 1]
     y_true = up_down.iloc[:, 2]
