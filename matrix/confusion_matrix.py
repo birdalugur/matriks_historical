@@ -8,6 +8,7 @@ import scipy.stats as stats
 from sklearn.metrics import matthews_corrcoef, mutual_info_score
 from sklearn.metrics import adjusted_rand_score, accuracy_score
 from matrix.merge_zeros import merge_zeros
+from multiprocessing import Pool
 
 # <<<<<<<<<<<<<<<<<<<<<<
 
@@ -26,26 +27,20 @@ data = data.reset_index().pivot_table(index='date', columns='symbol', values='mi
 all_pairs = [list(pair) for pair in itertools.permutations(data.columns, 2)]
 # <<<<<<<<<<<<<<<<<<<<<
 
-# metrics results is store on lists >>>>>>>>
-all_mcc = []
-all_acs = []
-all_mi = []
-all_ari = []
-all_oddsratio = []
-all_pval = []
-all_chi2 = []
-all_p = []
-all_dof = []
-all_ex = []
+
 error_list = list()
 # <<<<<<<<<<<<<<<<<<<<<<<<<
 count = 1
 
-# get a each pair and do the following operations >>>>>>>>>> for >>>>>>
-for pair in all_pairs:
-    print(pair, ' : ', count)
+
+# get a each pair and do the following operations >>>>>>>>>>>>>>>>
+def calculate(pair):
     log.append(pair)
+
+    global count
     count = count + 1
+    print(pair, ' : ', count)
+
     # select pairs >>>>>>>>
     pivot = data[pair[0]].dropna()
     other = data[pair[1]].dropna()
@@ -92,17 +87,7 @@ for pair in all_pairs:
         log.append((pair, ': için chi2 hesaplanamadı ve değerler nan geçildi !'))
         chi2, p, dof, ex = np.nan, np.nan, np.nan, np.nan
 
-    # add stats to list
-    all_mcc.append(mcc)
-    all_acs.append(acc_score)
-    all_mi.append(mi)
-    all_ari.append(ari)
-    all_oddsratio.append(oddsratio)
-    all_pval.append(p_value)
-    all_chi2.append(chi2)
-    all_p.append(p)
-    all_dof.append(dof)
-    all_ex.append(ex)
+
 
     plt.figure()
     plot_confusion_matrix(matrix, title='Normalized confusion matrix',
@@ -118,18 +103,28 @@ for pair in all_pairs:
     plt.savefig(export_folder + file_name)
     plt.close()
 
-all_stats = pd.DataFrame([
-    all_mcc,
-    all_acs,
-    all_mi,
-    all_ari,
-    all_oddsratio,
-    all_pval,
-    all_chi2,
-    all_p,
-    all_dof], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
-                     'adjusted_rand_score', 'oddsratio', 'p_value_fisher_exact', 'chi2', 'p_value_chi2', 'dof'])
+    return pair, mcc, acc_score, mi, ari, oddsratio, p_value, chi2, p, dof
 
-all_stats.columns = list(itertools.permutations(data.columns, 2))
 
-all_stats.to_csv(export_folder + 'statistics.csv')
+if __name__ == '__main__':
+    pool = Pool(processes=16)
+
+    pairlist, all_mcc, all_acs, all_mi, all_ari, all_oddsratio, all_pval, all_chi2, all_p, all_dof = zip(*pool.map(calculate, all_pairs))
+
+
+    all_stats = pd.DataFrame([
+        all_mcc,
+        all_acs,
+        all_mi,
+        all_ari,
+        all_oddsratio,
+        all_pval,
+        all_chi2,
+        all_p,
+        all_dof,
+        pairlist], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
+                         'adjusted_rand_score', 'oddsratio', 'p_value_fisher_exact', 'chi2', 'p_value_chi2', 'dof', 'pair'])
+
+    all_stats.columns = list(itertools.permutations(data.columns, 2))
+
+    all_stats.to_csv(export_folder + 'statistics.csv')

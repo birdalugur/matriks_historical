@@ -4,14 +4,14 @@
 import pandas as pd
 
 # path to the file to be read
-file_name = '../statistics.csv'
+file_name = 'results/statistics.csv'
 
 # path to the results to be stored
-export_path = '../results/ordered_result.csv'
+export_path = 'results/ordered_result.csv'
 
 stats = pd.read_csv(file_name, index_col=0)
 
-stats = stats.drop(['dof', 'chi2', 'oddsratio'])
+stats = stats.drop(['dof', 'chi2', 'oddsratio','pair'])
 
 data = stats.reset_index()
 
