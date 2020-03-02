@@ -87,8 +87,6 @@ def calculate(pair):
         log.append((pair, ': için chi2 hesaplanamadı ve değerler nan geçildi !'))
         chi2, p, dof, ex = np.nan, np.nan, np.nan, np.nan
 
-
-
     plt.figure()
     plot_confusion_matrix(matrix, title='Normalized confusion matrix',
                           x_label=pair[0], y_label=pair[1], normalize=True)
@@ -103,28 +101,17 @@ def calculate(pair):
     plt.savefig(export_folder + file_name)
     plt.close()
 
-    return pair, mcc, acc_score, mi, ari, oddsratio, p_value, chi2, p, dof
+    s_index = ['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
+               'adjusted_rand_score', 'oddsratio', 'p_value_fisher_exact', 'chi2', 'p_value_chi2', 'dof']
+
+    return pd.Series(data=[mcc, acc_score, mi, ari, oddsratio, p_value, chi2, p, dof], name=tuple(pair), index=s_index)
 
 
 if __name__ == '__main__':
     pool = Pool(processes=16)
 
-    pairlist, all_mcc, all_acs, all_mi, all_ari, all_oddsratio, all_pval, all_chi2, all_p, all_dof = zip(*pool.map(calculate, all_pairs))
+    result = pool.map(calculate, all_pairs)
 
+    result = pd.concat(result, axis=1)
 
-    all_stats = pd.DataFrame([
-        all_mcc,
-        all_acs,
-        all_mi,
-        all_ari,
-        all_oddsratio,
-        all_pval,
-        all_chi2,
-        all_p,
-        all_dof,
-        pairlist], index=['matthews_corrcoef', 'accuracy_score', 'mutual_info_score',
-                         'adjusted_rand_score', 'oddsratio', 'p_value_fisher_exact', 'chi2', 'p_value_chi2', 'dof', 'pair'])
-
-    all_stats.columns = list(itertools.permutations(data.columns, 2))
-
-    all_stats.to_csv(export_folder + 'statistics.csv')
+    result.to_csv(export_folder + 'statistics.csv')
