@@ -53,3 +53,18 @@ def time_series(data: pd.DataFrame, col: str) -> pd.DataFrame:
         Dataframe: pivot table
     """
     return data.pivot(index='time', columns='symbol', values=col)
+
+
+def sample():
+    """
+    Random verilerle örnek veri seti oluşturur.
+    """
+    from numpy.random import ranf
+
+    dates = pd.date_range(start='2020-10-01 00:00', end='2020-10-30 00:00', freq='30Min')
+
+    bist_codes = pd.read_csv('data/bist_symbols.csv', squeeze=True)
+
+    data = (ranf(len(dates) * len(bist_codes)) * 10).reshape(len(dates), len(bist_codes))
+
+    return pd.DataFrame(data, index=dates, columns=bist_codes)
