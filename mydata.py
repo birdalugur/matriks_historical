@@ -52,4 +52,4 @@ def time_series(data: pd.DataFrame, col: str) -> pd.DataFrame:
     Returns:
         Dataframe: pivot table
     """
-    return data.pivot(index='date', columns='symbol', values=col)
+    return data.pivot(index='time', columns='symbol', values=col)
