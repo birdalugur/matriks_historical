@@ -12,3 +12,4 @@ six==1.14.0
 requests
 pandas
 scikit-learn
+plotly

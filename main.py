@@ -1,5 +1,5 @@
 import mydata
-import mytime
+import plot
 
 data = mydata.read('data/all_data/')
 
@@ -10,3 +10,5 @@ mid_price = data.pivot_table(index='time', columns='symbol', values='mid_price',
 mid_price = mid_price.resample('5Min').mean()
 
 mid_price = mydata.sample()
+
+plot.candlestick(mid_price['GARAN'], 'D')
