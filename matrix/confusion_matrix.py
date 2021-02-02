@@ -1,7 +1,5 @@
 # import used libraries >>>>>>>
 import itertools
-import pandas as pd
-import numpy as np
 from matrix.up_down import *
 from matrix.plot import plot_confusion_matrix, plt
 import scipy.stats as stats
@@ -47,6 +45,7 @@ def calculate(pair):
     # <<<<<<<<<<<<<<<<<<<<
 
     # calculate change for each day >>>>>>>>>>>>>>>>>
+    # TODO: is dropna required ??
     pivot = pivot.resample('D').apply(lambda x: np.trim_zeros(x.diff().dropna())).droplevel(0)
     other = other.resample('D').apply(lambda x: np.trim_zeros(x.diff().dropna())).droplevel(0)
 
@@ -54,6 +53,7 @@ def calculate(pair):
 
     pivot_start_time: pd.Timestamp = pivot.index.min()
     end_time: pd.Timestamp = change_df.last_valid_index()
+    # TODO: wrong ????
     change_df = change_df.between_time(start_time=pivot_start_time.time(), end_time=end_time.time())
     # <<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
